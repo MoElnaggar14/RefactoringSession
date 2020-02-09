@@ -18,7 +18,7 @@ class Customer {
         familyRides = []
     }
     
-    func addFamilyRide(ride:Ride) {
+    func addFamilyRide(_ ride: Ride) {
         familyRides.append(ride)
     }
     

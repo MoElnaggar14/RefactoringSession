@@ -42,8 +42,10 @@ class Customer {
             
             amountPerRide.append(rideAmout)
         }
+        
+        let receipt = Receipt(customerName: name, amountPerRide: amountPerRide, totalAmount: totalAmount, totalPoints: totalPoints)
                 
-        return receiptDelegate.print(receipt: Receipt(customerName: name, amountPerRide: amountPerRide, totalAmount: totalAmount, totalPoints: totalPoints))
+        return receiptDelegate.print(receipt: receipt)
     }
 }
 

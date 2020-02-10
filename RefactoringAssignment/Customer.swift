@@ -82,7 +82,8 @@ class Ride: RideService {
         var rideAmount = intialFees
         rideAmount += applyTimePrice(time)
         rideAmount += applyExtraFees()
-        rideAmount += applyExtraKilomters(time, kilometers)
+        rideAmount += applyExtraKilometers(time, kilometers)
+        rideAmount += rideAmount * applyExtraKilometersLimits(time, kilometers)
         rideAmount += addTolls(tolls ?? [])
         rideAmount += applySurgRate(isSurged ?? false, rate: surgeRate)
         return rideAmount
@@ -119,7 +120,7 @@ class Ride: RideService {
         }
     }
     
-    func applyExtraKilomters(_ time: Int, _ kilometers: Int) -> Double {
+    func applyExtraKilometers(_ time: Int, _ kilometers: Int) -> Double {
         switch serviceType {
         case .uberX:
             return kilometers > time * 50 ? Double((kilometers - time * 50) * 2) : 0
@@ -129,6 +130,20 @@ class Ride: RideService {
             return 0
             
         }
+    }
+    
+    func applyExtraKilometersLimits(_ time: Int, _ kilometers: Int) -> Double {
+        guard kilometers > 200 else { return 0 }
+        
+        switch serviceType {
+        case .uberX:
+            return 0.05
+        case .uberBlack:
+            return time > 120 ? 0.05 : 0
+        case .chopper:
+            return 0
+        }
+        
     }
     
     func addTolls(_ tolls: [Int]) -> Double {  

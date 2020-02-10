@@ -28,7 +28,8 @@ protocol RideService {
     
     func applyTimePrice(_ time: Int) -> Double
     func applyExtraFees() -> Double
-    func applyExtraKilomters(_ time: Int, _ kilometers: Int) -> Double
+    func applyExtraKilometers(_ time: Int, _ kilometers: Int) -> Double
+    func applyExtraKilometersLimits(_ time: Int, _ kilometers: Int) -> Double
     func addTolls(_ tolls: [Int]) -> Double
     func applySurgRate(_ isSurged: Bool, rate: Double) -> Double
     

@@ -11,14 +11,19 @@ import Foundation
 class Customer {
     
     var name: String
+    
+    var receiptDelegate: ReceiptDelegate
+    
     var familyRides: [Ride]
     
-    init(name:String) {
+    
+    init(name:String, _ delegate: ReceiptDelegate) {
         self.name = name
+        receiptDelegate = delegate
         familyRides = []
     }
     
-    func addFamilyRide(ride:Ride) {
+    func addFamilyRide(_ ride: Ride) {
         familyRides.append(ride)
     }
     
@@ -26,118 +31,147 @@ class Customer {
         
         var totalAmount : Double = 0.0
         var totalPoints : Double = 0.0
+        var amountPerRide = [Double]()
 
-        var result:String = "Receipt for:" + self.name + "\n"
-        
-        for ride in familyRides {
+        familyRides.forEach { ride in
+            let rideAmout = ride.calculateRideAmount()
+            let ridePoints = ride.calculatePoints()
             
-            var rideAmount: Double = 50.0
+            totalAmount += rideAmout
+            totalPoints += ridePoints
             
-            switch (ride.service) {
-                
-            case Service.uberX:
-                
-                rideAmount += Double(100*ride.time)
-                
-                if ride.kilometers > ride.time*50  {
-                    rideAmount += Double((ride.kilometers - ride.time*50) * 2)
-                }
-                
-                rideAmount += 50
-                
-            case Service.chopper:
-                
-                rideAmount += Double(200*ride.time)
-                
-            case Service.uberBlack:
-                
-                rideAmount += Double(150*ride.time)
-                
-                if ride.kilometers > ride.time*70 {
-                    rideAmount += Double((ride.kilometers - ride.time*70) * 2)
-                }
-                
-                rideAmount += 60
- 
-            default:
-                rideAmount += 0.0
-            }
-            
-            if ride.kilometers>200 {
-                if ride.time>120 && ride.service == Service.uberBlack {
-                    
-                    rideAmount+=rideAmount*0.05
-                
-                } else if ride.service==Service.uberX {
-                    
-                    rideAmount+=rideAmount*0.05
-                }
-            }
-            
-            if ride.service == Service.uberX || ride.service == Service.uberBlack {
-                for toll in ride.tolls {
-                    rideAmount += Double(toll)
-                }
-            }
-            
-            if ride.isSurged {
-                if ride.service == Service.uberX {
-                    rideAmount *= ride.surgeRate
-                    totalPoints += (ride.surgeRate * 10 - 10)
-                }
-            }
-            
-            totalPoints += rideAmount / 10.0
-            
-            if ride.service == Service.chopper {
-                totalPoints *= 2
-            } else if ride.service == Service.uberBlack {
-                totalPoints += 5
-            }
-
-            result+=String(format:"LE %.2f\n",rideAmount)
-            
-            totalAmount+=rideAmount;
+            amountPerRide.append(rideAmout)
         }
-        
-        result+=String(format:"Amount owed is LE %.2f, and %.2f point\n",totalAmount, Int(totalPoints));
-        
-        return result;
+                
+        return receiptDelegate.print(receipt: Receipt(customerName: name, amountPerRide: amountPerRide, totalAmount: totalAmount, totalPoints: totalPoints))
     }
 }
- 
-class Ride {
+
+class Ride: RideService {
     
-    var service: Int
-    var kilometers: Int
+    var serviceType: ServiceType
+    
+    var intialFees: Double = 50
+    
     var time: Int
-    var tolls: [Int]
-    var isSurged: Bool
+    
+    var kilometers: Int
+    
+    var tolls: [Int]?
+    
+    var isSurged: Bool?
+    
     var surgeRate: Double
     
-    init(service: Int, kilometers: Int, time: Int, tolls: [Int], isSurged: Bool, surgeRate: Double) {
-        self.service = service
-        self.kilometers = kilometers
+    var isPopular: Bool = true
+    
+    var maxUsers: Int = 4
+    
+    
+    init(serviceType: ServiceType, time: Int, kilometers: Int, tolls: [Int], isSurged: Bool, surgeRate: Double) {
+        self.serviceType = serviceType
         self.time = time
+        self.kilometers = kilometers
         self.tolls = tolls
         self.isSurged = isSurged
         self.surgeRate = surgeRate
     }
-}
- 
-class Service {
     
-    static let uberX:Int = 1
-    static let chopper:Int = 2
-    static let uberBlack:Int = 3
     
-    var maxUsers: Int
-    var isPopular: Bool
-    var type: Int
+    func calculateRideAmount() -> Double {
+        var rideAmount = intialFees
+        rideAmount += applyTimePrice(time)
+        rideAmount += applyExtraFees()
+        rideAmount += applyExtraKilomters(time, kilometers)
+        rideAmount += addTolls(tolls ?? [])
+        rideAmount += applySurgRate(isSurged ?? false, rate: surgeRate)
+        return rideAmount
+    }
     
-    init(maxUsers: Int, isPopular: Bool, type: Int) {
-        self.maxUsers = maxUsers
-        self.isPopular = isPopular
-        self.type = type
+    func calculatePoints() -> Double {
+        var points = 0.0
+        points += applyBasePoints(calculateRideAmount())
+        points += applySurgePoints(isSurged ?? false, rate: surgeRate)
+        points += applyExtraPointsForServiceType(points)
+        return points
+    }
+    
+    func applyTimePrice(_ time: Int) -> Double {
+        switch serviceType {
+            
+        case .uberX:
+            return Double(100 * time)
+        case .uberBlack:
+            return Double(150 * time) 
+        case .chopper:
+            return Double(200 * time) 
+        }
+    }
+    
+    func applyExtraFees() -> Double {
+        switch serviceType {
+        case .uberX:
+            return 50
+        case .uberBlack:
+            return 60
+        case .chopper:
+            return 0
+        }
+    }
+    
+    func applyExtraKilomters(_ time: Int, _ kilometers: Int) -> Double {
+        switch serviceType {
+        case .uberX:
+            return kilometers > time * 50 ? Double((kilometers - time * 50) * 2) : 0
+        case .uberBlack:
+            return kilometers > time * 70 ? Double((kilometers - time * 70) * 2) : 0
+        case .chopper:
+            return 0
+            
+        }
+    }
+    
+    func addTolls(_ tolls: [Int]) -> Double {  
+        switch serviceType {
+        case .uberX, .uberBlack:
+            return Double(tolls.reduce(0, +))
+        case .chopper:
+            return 0
+        }
+    }
+    
+    func applySurgRate(_ isSurged: Bool, rate: Double) -> Double {
+        guard isSurged else { return 0 }
+        switch serviceType {
+        case .uberX:
+            return rate
+        case .uberBlack, .chopper:
+            return 0
+        }
+    }
+    
+    func applyBasePoints(_ rideAmount: Double) -> Double {
+        return rideAmount / 10
+    }
+    
+    func applySurgePoints(_ isSurged: Bool, rate: Double) -> Double {
+        guard isSurged else { return 0 }
+        switch serviceType {
+        case .uberX:
+            return rate * 10 - 10
+        case .uberBlack, .chopper:
+            return 0
+        }
+    }
+    
+    func applyExtraPointsForServiceType(_ totalPoints: Double) -> Double {
+        switch serviceType {
+        case .uberX:
+            return 0
+        case .uberBlack:
+            return 5
+        case .chopper:
+            return 2
+        }
     }
 }

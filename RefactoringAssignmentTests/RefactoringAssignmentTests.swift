@@ -15,7 +15,7 @@ class RefactoringAssignmentTests: XCTestCase {
     
     override func setUp() {
         // Put setup code here. This method is called before the invocation of each test method in the class.
-        sut = Customer(name: "Ahmed")
+        sut = Customer(name: "Ahmed", FinalReceipt())
     }
 
     override func tearDown() {
@@ -25,24 +25,24 @@ class RefactoringAssignmentTests: XCTestCase {
 
     func testReceiptExample() {
         // given
-        sut.addFamilyRide(ride: Ride(service: Service.uberBlack, kilometers: 300, time: 150, tolls: [5,4,6], isSurged: true, surgeRate: 1.5))
-        sut.addFamilyRide(ride: Ride(service: Service.uberX, kilometers: 200, time: 66, tolls: [5,6,6], isSurged: false, surgeRate: 0))
-        sut.addFamilyRide(ride: Ride(service: Service.chopper, kilometers: 160, time: 55, tolls: [5,4,6], isSurged: false, surgeRate: 0))
-        sut.addFamilyRide(ride: Ride(service: Service.uberBlack, kilometers: 3, time: 22, tolls: [5,6,6], isSurged: true, surgeRate: 1.4))
-        sut.addFamilyRide(ride: Ride(service: Service.uberX, kilometers: 200, time: 90, tolls: [5,4,6], isSurged: false, surgeRate: 0))
-        sut.addFamilyRide(ride: Ride(service: Service.chopper, kilometers: 140, time: 130, tolls: [5,6,6], isSurged: true, surgeRate: 1.3))
+        sut.addFamilyRide(Ride(serviceType: .uberBlack, time: 150, kilometers: 300, tolls: [5,4,6], isSurged: true, surgeRate: 1.5))
+        sut.addFamilyRide(Ride(serviceType: .uberX, time: 66, kilometers: 200, tolls: [5,6,6], isSurged: false, surgeRate: 0))
+        sut.addFamilyRide(Ride(serviceType: .chopper, time: 55, kilometers: 160, tolls: [5,4,6], isSurged: false, surgeRate: 0))
+        sut.addFamilyRide(Ride(serviceType: .uberBlack, time: 22, kilometers: 3, tolls: [5,6,6], isSurged: true, surgeRate: 1.4))
+        sut.addFamilyRide(Ride(serviceType: .uberX, time: 90, kilometers: 200, tolls: [5,4,6], isSurged: false, surgeRate: 0))
+        sut.addFamilyRide(Ride(serviceType: .chopper, time: 130, kilometers: 140, tolls: [5,6,6], isSurged: true, surgeRate: 1.3))
         
         // when
         let result = sut.receipt()
         let expectedResult = """
-Receipt for:Ahmed
-LE 23755.50
+Receipt for: Ahmed
+LE 22625.00
 LE 6717.00
 LE 11050.00
 LE 3427.00
 LE 9115.00
 LE 26050.00
-Amount owed is LE 80114.50, and 0.00 point\n
+Amount owed is LE 78984.00, and 7912.40 point\n
 """
         
         XCTAssertEqual(result, expectedResult, "Receipt not matched")
